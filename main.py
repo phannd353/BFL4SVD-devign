@@ -12,6 +12,7 @@ import gc
 import os
 import shutil
 from argparse import ArgumentParser
+from collections import Counter
 
 from gensim.models.word2vec import Word2Vec
 
@@ -31,7 +32,7 @@ def select(dataset):
     # print(len(result))
     # result = result.iloc[11001:]
     # print(len(result))
-    result = result.head(200)
+    result = result.head(20)
 
     return result
 
@@ -129,12 +130,10 @@ def process_task(stopping):
     train = process.Train(model, context.epochs)
     input_dataset = data.loads(PATHS.input)
     # split the dataset and pass to DataLoader with batch size
-    train_loader, val_loader, test_loader = list(
-        map(
-            lambda x: x.get_loader(context.batch_size, shuffle=context.shuffle),
-            data.train_val_test_split(input_dataset, shuffle=context.shuffle),
-        )
-    )
+    train_loader, val_loader, test_loader = [
+        x.get_loader(context.batch_size, shuffle=context.shuffle)
+        for x in data.train_val_test_split(input_dataset, shuffle=context.shuffle)
+    ]
     train_loader_step = process.LoaderStep("Train", train_loader, DEVICE)
     val_loader_step = process.LoaderStep("Validation", val_loader, DEVICE)
     test_loader_step = process.LoaderStep("Test", test_loader, DEVICE)
@@ -150,6 +149,54 @@ def process_task(stopping):
     process.predict(model, test_loader_step)
 
 
+def test_task():
+    context = configs.Process()
+    devign = configs.Devign()
+    model_path = PATHS.model + FILES.model
+    model = process.Devign(
+        path=model_path,
+        device=DEVICE,
+        model=devign.model,
+        learning_rate=devign.learning_rate,
+        weight_decay=devign.weight_decay,
+        loss_lambda=devign.loss_lambda,
+    )
+    input_dataset = data.loads(PATHS.input)
+    _, _, test_loader = data.train_val_test_split(
+        input_dataset, shuffle=context.shuffle
+    )
+
+    test_loader_step = process.LoaderStep("Test", test_loader, DEVICE)
+    model.load()
+    process.predict(model, test_loader_step)
+
+
+def check_task():
+    context = configs.Process()
+    input_dataset = data.loads(PATHS.input)
+    train_dataset, val_dataset, test_dataset = data.train_val_test_split(
+        input_dataset, shuffle=context.shuffle
+    )
+    train_labels = train_dataset.dataset.target.tolist()
+    val_labels = val_dataset.dataset.target.tolist()
+    test_labels = test_dataset.dataset.target.tolist()
+    print(Counter(train_labels))
+    print(Counter(val_labels))
+    print(Counter(test_labels))
+
+    context = configs.Process()
+    devign = configs.Devign()
+    model_path = PATHS.model + FILES.model
+    model = process.Devign(
+        path=model_path,
+        device=DEVICE,
+        model=devign.model,
+        learning_rate=devign.learning_rate,
+        weight_decay=devign.weight_decay,
+        loss_lambda=devign.loss_lambda,
+    )
+
+
 def main():
     """
     main function that executes tasks based on command-line options
@@ -160,6 +207,8 @@ def main():
     parser.add_argument("-e", "--embed", action="store_true")
     parser.add_argument("-p", "--process", action="store_true")
     parser.add_argument("-pS", "--process_stopping", action="store_true")
+    parser.add_argument("-t", "--test", action="store_true")
+    parser.add_argument("-ch", "--check", action="store_true")
 
     args = parser.parse_args()
 
@@ -171,6 +220,10 @@ def main():
         process_task(False)
     if args.process_stopping:
         process_task(True)
+    if args.test:
+        test_task()
+    if args.check:
+        check_task()
 
 
 if __name__ == "__main__":

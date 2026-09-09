@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from torch_geometric.data import Data
 
-import src.utils.functions.parse as parse
+from src.utils.functions import parse
 from src.utils.objects.input_dataset import InputDataset
 
 
@@ -72,7 +72,7 @@ def tokenize(data_frame: pd.DataFrame):
 
 def to_files(data_frame: pd.DataFrame, out_path):
     # path = f"{self.out_path}/{self.dataset_name}/"
-    os.makedirs(out_path)
+    os.makedirs(out_path, exist_ok=True)
 
     for idx, row in data_frame.iterrows():
         file_name = f"{idx}.c"
@@ -94,8 +94,8 @@ def inner_join_by_index(df1, df2):
 def train_val_test_split(data_frame: pd.DataFrame, shuffle=True):
     print("Splitting Dataset")
 
-    false = data_frame[data_frame.target == 0]
-    true = data_frame[data_frame.target == 1]
+    false: pd.DataFrame = data_frame.loc[data_frame.target == 0]
+    true: pd.DataFrame = data_frame.loc[data_frame.target == 1]
 
     train_false, test_false = train_test_split(
         false, test_size=0.2, shuffle=shuffle, random_state=2020
@@ -110,9 +110,9 @@ def train_val_test_split(data_frame: pd.DataFrame, shuffle=True):
         test_true, test_size=0.5, shuffle=shuffle, random_state=2020
     )
 
-    train = pd.concat([train_false, train_true])
-    val = pd.concat([val_false, val_true])
-    test = pd.concat([test_false, test_true])
+    train = pd.concat([pd.DataFrame(train_false), pd.DataFrame(train_true)])
+    val = pd.concat([pd.DataFrame(val_false), pd.DataFrame(val_true)])
+    test = pd.concat([pd.DataFrame(test_false), pd.DataFrame(test_true)])
 
     train = train.reset_index(drop=True)
     val = val.reset_index(drop=True)
@@ -126,9 +126,7 @@ def get_directory_files(directory):
 
 
 def loads(data_sets_dir, ratio=1):
-    exists = os.path.exists(data_sets_dir)
-    if not exists:
-        os.mkdir(data_sets_dir)
+    os.makedirs(data_sets_dir, exist_ok=True)
     data_sets_files = sorted(
         [f for f in listdir(data_sets_dir) if isfile(join(data_sets_dir, f))]
     )

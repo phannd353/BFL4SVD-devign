@@ -36,7 +36,7 @@ def joern_parse(joern_path, input_path, output_path, file_name):
     out_file = file_name + ".bin"
 
     cmd = [
-        "./" + joern_path + "joern-parse",
+        os.path.join(os.getcwd(), f"./{joern_path}joern-parse"),
         input_path,
         "--output",
         output_path + out_file,
@@ -64,18 +64,26 @@ def joern_create(joern_path, in_path, out_path, cpg_files):
 
         print(in_path + cpg_file)
         if os.path.exists(in_path + cpg_file):
+            json_in = f"{os.path.abspath(in_path)}/{cpg_file}"
             json_out = f"{os.path.abspath(out_path)}/{json_file_name}"
+            input_path = f"inputPath={json_in}"
+            output_path = f"outputPath={json_out}"
+
+            if platform.system() == "Windows":
+                input_path = f'"{input_path}"'
+                output_path = f'"{output_path}"'
+
             script_path = (
                 f"{os.path.dirname(os.path.abspath(joern_path))}/graph-for-funcs.sc"
             )
             cmd = [
-                "./" + joern_path + "joern",
+                os.path.join(os.getcwd(), f"./{joern_path}joern"),
                 "--script",
                 script_path,
                 "--param",
-                f"inputPath={os.path.abspath(in_path)}/{cpg_file}",
+                input_path,
                 "--param",
-                f"outputPath={json_out}",
+                output_path,
             ]
             if platform.system() == "Windows":
                 cmd = ["cmd", "/c"] + cmd
