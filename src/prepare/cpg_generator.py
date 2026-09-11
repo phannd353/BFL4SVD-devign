@@ -62,36 +62,33 @@ def joern_create(joern_path, in_path, out_path, cpg_files):
         json_file_name = f"{cpg_file.split('.')[0]}.json"
         json_files.append(json_file_name)
 
-        print(in_path + cpg_file)
-        if os.path.exists(in_path + cpg_file):
-            json_in = f"{os.path.abspath(in_path)}/{cpg_file}"
-            json_out = f"{os.path.abspath(out_path)}/{json_file_name}"
-            input_path = f"inputPath={json_in}"
-            output_path = f"outputPath={json_out}"
+        cpg_path = os.path.abspath(os.path.join(in_path, cpg_file))
+        if not os.path.exists(cpg_path):
+            continue
 
-            if platform.system() == "Windows":
-                input_path = f'"{input_path}"'
-                output_path = f'"{output_path}"'
+        json_out = os.path.abspath(os.path.join(out_path, json_file_name))
+        inputPath = f"inputPath={cpg_path}"
+        outputPath = f"outputPath={json_out}"
+        if platform.system() == "Windows":
+            inputPath = f'"{inputPath}"'
+            outputPath = f'"{outputPath}"'
+        script_path = os.path.join(
+            os.path.dirname(os.path.abspath(joern_path)), "graph-for-funcs.sc"
+        )
+        cmd = [
+            os.path.join(os.getcwd(), f"./{joern_path}joern"),
+            "--script",
+            script_path,
+            "--param",
+            f"inputPath={cpg_path}",
+            "--param",
+            f"outputPath={json_out}",
+        ]
+        if platform.system() == "Windows":
+            cmd = ["cmd", "/c"] + cmd
 
-            script_path = (
-                f"{os.path.dirname(os.path.abspath(joern_path))}/graph-for-funcs.sc"
-            )
-            cmd = [
-                os.path.join(os.getcwd(), f"./{joern_path}joern"),
-                "--script",
-                script_path,
-                "--param",
-                input_path,
-                "--param",
-                output_path,
-            ]
-            if platform.system() == "Windows":
-                cmd = ["cmd", "/c"] + cmd
+        subprocess.run(cmd, check=True)
 
-            subprocess.run(
-                cmd,
-                check=True,
-            )
     return json_files
 
 

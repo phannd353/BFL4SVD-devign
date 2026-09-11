@@ -1,3 +1,4 @@
+#! venv/bin/python3
 """
 This module is intended to join all the pipeline in separated tasks
 to be executed individually or in a flow by using command-line options
@@ -18,6 +19,7 @@ from gensim.models.word2vec import Word2Vec
 
 import configs
 from src import data, prepare, process
+from src.data import datachecker
 from src.utils.functions import cpg
 
 PATHS = configs.Paths()
@@ -26,15 +28,15 @@ DEVICE = FILES.get_device()
 
 
 def select(dataset):
-    result = dataset.loc[dataset["project"] == "FFmpeg"]
-    len_filter = result.func.str.len() < 1200
-    result = result.loc[len_filter]
+    # result = dataset.loc[dataset["project"] == "FFmpeg"]
+    # len_filter = result.func.str.len() < 1200
+    # result = result.loc[len_filter]
     # print(len(result))
     # result = result.iloc[11001:]
     # print(len(result))
-    result = result.head(20)
+    # result = result.head(20)
 
-    return result
+    return dataset.head(200)
 
 
 def create_task():
@@ -184,17 +186,7 @@ def check_task():
     print(Counter(val_labels))
     print(Counter(test_labels))
 
-    context = configs.Process()
-    devign = configs.Devign()
-    model_path = PATHS.model + FILES.model
-    model = process.Devign(
-        path=model_path,
-        device=DEVICE,
-        model=devign.model,
-        learning_rate=devign.learning_rate,
-        weight_decay=devign.weight_decay,
-        loss_lambda=devign.loss_lambda,
-    )
+    datachecker.check_data(PATHS.input)
 
 
 def main():

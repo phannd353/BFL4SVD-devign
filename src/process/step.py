@@ -3,6 +3,12 @@ import torch
 from ..utils.objects import stats
 
 
+def softmax_accuracy(probs, all_labels):
+    acc = (torch.argmax(probs) == all_labels).sum()
+    acc = torch.div(acc, len(all_labels) + 0.0)
+    return acc
+
+
 def binary_accuracy(probs, labels):
     predictions = (probs >= 0.5).float()
     return (predictions == labels).float().mean()
@@ -18,7 +24,7 @@ class Step:
     def __call__(self, i, x, y):
         out = self.model(x)
         loss = self.criterion(out, y.float())
-        acc = binary_accuracy(out, y.float())
+        acc = softmax_accuracy(out, y.float())
 
         if self.model.training:
             # calculates the gradient
